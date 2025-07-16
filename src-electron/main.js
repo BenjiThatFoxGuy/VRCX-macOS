@@ -13,6 +13,11 @@ const { spawn, spawnSync } = require('child_process');
 const fs = require('fs');
 const https = require('https');
 
+// Set DOTNET_ROOT for macOS x64 builds
+if (process.platform === 'darwin') {
+    process.env.DOTNET_ROOT = '/usr/local/share/dotnet/x64';
+}
+
 // Include bundled .NET runtime
 const bundledDotNetPath = path.join(process.resourcesPath, 'dotnet-runtime');
 const bundledDotnet = path.join(bundledDotNetPath, 'bin', 'dotnet');
@@ -520,14 +525,16 @@ function getVersion() {
         // look for trailing git hash "-22bcd96" to indicate nightly build
         var version = versionFile.split('-');
         console.log('Version:', versionFile);
+        const platformLabel = process.platform === 'darwin' ? 'macOS' : 'Linux';
         if (version.length > 0 && version[version.length - 1].length == 7) {
-            return `VRCX (Linux) Nightly ${versionFile}`;
+            return `VRCX (${platformLabel}) Nightly ${versionFile}`;
         } else {
-            return `VRCX (Linux) ${versionFile}`;
+            return `VRCX (${platformLabel}) ${versionFile}`;
         }
     } catch (err) {
         console.error('Error reading Version:', err);
-        return 'VRCX (Linux) Nightly Build';
+        const platformLabel = process.platform === 'darwin' ? 'macOS' : 'Linux';
+        return `VRCX (${platformLabel}) Nightly Build`;
     }
 }
 

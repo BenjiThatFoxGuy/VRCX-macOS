@@ -1,7 +1,11 @@
 name: VRCX
 
 on:
-    - workflow_dispatch
+    workflow_dispatch:
+    push:
+        branches: [ "master", "main" ]
+    pull_request:
+        branches: [ "master", "main" ]
 
 concurrency:
     group: ${{ github.ref }}
@@ -89,6 +93,7 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: '18'
+                  cache: 'npm'
             
             - name: Set version
               run: |
@@ -103,6 +108,17 @@ jobs:
             
             - name: Build macOS app
               run: npm run build-macos
+            
+            - name: Verify build output
+              run: |
+                  ls -la build/mac/
+                  if [ -d "build/mac/VRCX.app" ]; then
+                      echo "✅ VRCX.app bundle created successfully"
+                      ls -la build/mac/VRCX.app/
+                  else
+                      echo "❌ VRCX.app bundle not found"
+                      exit 1
+                  fi
             
             - name: Upload macOS app bundle
               uses: actions/upload-artifact@v4
@@ -199,11 +215,15 @@ jobs:
                   echo "Zip FileName: ${file_name}"
             - name: Make macOS zip
               run: |
-                  file_name="VRCX_${{ needs.set_version.outputs.version }}_macOS.zip"
-                  cd build/mac
-                  7z a -tzip ${file_name} VRCX.app -mx=7
-                  mv ${file_name} ../../${file_name}
-                  echo "macOS Zip FileName: ${file_name}"
+                  if [ -d "build/mac/VRCX.app" ]; then
+                      file_name="VRCX_${{ needs.set_version.outputs.version }}_macOS.zip"
+                      cd build/mac
+                      7z a -tzip ${file_name} VRCX.app -mx=7
+                      mv ${file_name} ../../${file_name}
+                      echo "macOS Zip FileName: ${file_name}"
+                  else
+                      echo "Warning: macOS app bundle not found, skipping macOS zip creation"
+                  fi
             - name: Upload Setup artifact
               uses: actions/upload-artifact@v4
               with:
@@ -216,6 +236,7 @@ jobs:
                   path: 'VRCX_${{ needs.set_version.outputs.version }}.zip'
             - name: Upload macOS Zip artifact
               uses: actions/upload-artifact@v4
+              if: ${{ hashFiles('VRCX_${{ needs.set_version.outputs.version }}_macOS.zip') != '' }}
               with:
                   name: VRCX-macOS-Zip
                   path: 'VRCX_${{ needs.set_version.outputs.version }}_macOS.zip'

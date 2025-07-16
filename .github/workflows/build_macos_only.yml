@@ -1,0 +1,68 @@
+name: Build macOS Only
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  set_version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      date: ${{ steps.version.outputs.date }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        run: |
+          git_hash=$(git rev-parse --short "$GITHUB_SHA")
+          export FILENAME="$(date '+%Y-%m-%dT%H.%M')-${git_hash}"
+          export DATE="$(date '+%Y.%m.%d')"
+          echo "version=${FILENAME}" >> $GITHUB_OUTPUT
+          echo "date=${DATE}" >> $GITHUB_OUTPUT
+
+  build_macos:
+    needs: set_version
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET 9 (x64)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - name: Set version
+        run: |
+          echo "${{ needs.set_version.outputs.version }}" > Version
+          cat Version
+      - name: Install npm dependencies
+        run: npm ci
+      - name: Test macOS setup
+        run: npm run test-macos-setup
+      - name: Build macOS app
+        run: npm run build-macos
+      - name: Verify build output
+        run: |
+          ls -la build/mac/
+          if [ -d "build/mac/VRCX.app" ]; then
+            echo "✅ VRCX.app bundle created successfully"
+            ls -la build/mac/VRCX.app/
+          else
+            echo "❌ VRCX.app bundle not found"
+            exit 1
+          fi
+      - name: Upload macOS app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: VRCX-macOS
+          path: build/mac/VRCX.app/

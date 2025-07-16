@@ -18,7 +18,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       date: ${{ steps.version.outputs.date }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4  # ...existing code...
       - id: version
         run: |
           git_hash=$(git rev-parse --short "$GITHUB_SHA")
@@ -41,6 +41,18 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
+      # Download the .NET runtime for Electron packaging
+      - name: Download .NET runtime
+        run: |
+          node src-electron/download-dotnet-runtime.js
+
+      # Ensure app icon meets 512×512 minimum for electron-builder
+      - name: Resize app icon to 512×512
+        run: |
+          if command -v sips &> /dev/null; then
+            sips -Z 512 VRCX.png --out VRCX.png
+          fi
+
       - name: Set version
         run: |
           echo "${{ needs.set_version.outputs.version }}" > Version

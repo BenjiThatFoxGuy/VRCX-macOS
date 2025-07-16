@@ -13,12 +13,20 @@ export DOTNET_ROOT=/usr/local/share/dotnet/x64
 # Change to project root directory
 cd "$(dirname "$0")/.."
 
-# Check if x64 .NET is available
-if [[ ! -f "/usr/local/share/dotnet/x64/dotnet" ]]; then
-    echo "Error: x64 .NET SDK not found at /usr/local/share/dotnet/x64/"
-    echo "Please install .NET 9.0 SDK x64 version for macOS"
-    exit 1
+# Check for .NET availability - try x64 first, fall back to system dotnet
+DOTNET_CMD="/usr/local/share/dotnet/x64/dotnet"
+if [[ ! -f "$DOTNET_CMD" ]]; then
+    echo "x64 .NET SDK not found at /usr/local/share/dotnet/x64/, trying system dotnet..."
+    DOTNET_CMD="dotnet"
+    if ! command -v dotnet &> /dev/null; then
+        echo "Error: No .NET SDK found. Please install .NET 9.0 SDK."
+        exit 1
+    fi
 fi
+
+# Check .NET version
+echo "Checking .NET version..."
+$DOTNET_CMD --version
 
 # Patch package version
 echo "Patching package version..."
@@ -26,7 +34,7 @@ node src-electron/patch-package-version.js
 
 # Build the .NET part
 echo "Building .NET Electron project..."
-/usr/local/share/dotnet/x64/dotnet build Dotnet/VRCX-Electron.csproj -c Release -a x64 -v detailed
+$DOTNET_CMD build Dotnet/VRCX-Electron.csproj -c Release -a x64 -v detailed
 
 # Install npm dependencies
 echo "Installing npm dependencies..."

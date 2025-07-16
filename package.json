@@ -13,6 +13,7 @@
         "build-electron": "node ./src-electron/download-dotnet-runtime.js && node ./src-electron/patch-package-version.js && electron-builder --publish never",
         "build-electron-mac": "node ./src-electron/patch-package-version.js && electron-builder --mac --x64 --publish never",
         "build-macos": "./build-scripts/build-macos.sh",
+        "test-macos-setup": "./build-scripts/test-macos-setup.sh",
         "postbuild-electron": "node ./src-electron/patch-node-api-dotnet.js && node ./src-electron/rename-builds.js",
         "start-electron": "electron ."
     },
@@ -162,5 +163,6 @@
     "dependencies": {
         "hazardous": "^0.3.0",
         "node-api-dotnet": "^0.9.12"
-    }
+    },
+    "version": "2025.06.30"
 }

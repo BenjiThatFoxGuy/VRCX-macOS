@@ -31,6 +31,16 @@ xcode-select --install
 
 ## Building VRCX
 
+### Test Setup (Recommended First Step)
+
+Before building, you can test that everything is configured correctly:
+
+```bash
+npm run test-macos-setup
+```
+
+This will verify that all necessary components are in place and configured properly.
+
 ### Quick Build (Recommended)
 
 ```bash
